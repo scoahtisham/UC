@@ -3,59 +3,151 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>UC Camera Survey - PPIC3 Faisalabad</title>
+
 <style>
 body {
   font-family: Arial;
-  text-align: center;
-  padding: 40px;
+  padding: 15px;
   background: #f5f5f5;
 }
 
+h2 {
+  text-align: center;
+}
+
 button {
-  width: 90%;
-  max-width: 300px;
+  width: 100%;
   padding: 15px;
+  margin: 8px 0;
   font-size: 16px;
-  margin: 10px;
   border-radius: 10px;
   border: none;
 }
 
-.mapBtn { background: #34a853; color: white; }
-.continueBtn { background: #0b57d0; color: white; }
+.capture { background: #34a853; color: white; }
+.submit { background: #0b57d0; color: white; }
+
+.card {
+  background: white;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin: 4px 0;
+}
+
+iframe {
+  width: 100%;
+  height: 250px;
+  border: none;
+  border-radius: 10px;
+  margin-top: 10px;
+}
 </style>
 </head>
 
 <body>
 
-<h3>📍 Getting your location...</h3>
+<h2>📍 UC Camera Survey</h2>
 
-<div id="actions" style="display:none;">
-  <button class="mapBtn" onclick="openMap()">🗺️ View Location</button>
-  <button class="continueBtn" onclick="goForm()">✅ Continue</button>
-</div>
+<button class="capture" onclick="capture()">➕ Capture Camera Location</button>
+<button class="submit" onclick="submitData()">✅ Submit All</button>
+
+<div id="map"></div>
+<div id="list"></div>
 
 <script>
-let lat, lng;
 
-navigator.geolocation.getCurrentPosition(function(position) {
-  lat = position.coords.latitude;
-  lng = position.coords.longitude;
+let points = [];
+let max = 10;
 
-  document.querySelector("h3").innerHTML = "📍 Location Captured";
-  document.getElementById("actions").style.display = "block";
-});
+// Capture GPS
+function capture() {
 
-function openMap() {
+  if (points.length >= max) {
+    alert("Maximum 10 cameras reached");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(function(pos) {
+
+    let lat = pos.coords.latitude;
+    let lng = pos.coords.longitude;
+
+    points.push({lat, lng});
+
+    render();
+
+  }, function() {
+    alert("❌ Please allow location access");
+  });
+}
+
+// Render UI
+function render() {
+
+  let html = "";
+  
+  points.forEach((p, i) => {
+
+    html += `
+      <div class="card">
+        <b>Camera ${i+1}</b>
+
+        <input value="${p.lat}" readonly>
+        <input value="${p.lng}" readonly>
+
+        <button onclick="openMap(${p.lat}, ${p.lng})">🗺️ View Map</button>
+      </div>
+    `;
+  });
+
+  document.getElementById("list").innerHTML = html;
+
+  // Show latest map preview
+  let last = points[points.length - 1];
+  if (last) {
+    document.getElementById("map").innerHTML =
+      '<iframe src="https://maps.google.com/maps?q=' 
+      + last.lat + ',' + last.lng + '&z=15&output=embed"></iframe>';
+  }
+}
+
+// Open in Google Maps
+function openMap(lat, lng) {
   window.open("https://www.google.com/maps?q=" + lat + "," + lng, "_blank");
 }
 
-function goForm() {
-  window.location.href =
-    "https://docs.google.com/forms/d/e/1FAIpQLSfQjU6XeuV_Koy3UMIX-vIHw7njQtu5O1II3I1ttFBg-J9JIg/viewform"
-    + "?entry.858939236=" + lat
-    + "&entry.522193154=" + lng;
+// Submit to Google Sheet
+function submitData() {
+
+  if (points.length === 0) {
+    alert("No data to submit");
+    return;
+  }
+
+  fetch("YOUR_APPS_SCRIPT_URL", {
+    method: "POST",
+    body: JSON.stringify({ points: points }),
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+  .then(res => {
+    alert("✅ Submitted Successfully");
+    points = [];
+    render();
+  })
+  .catch(err => {
+    alert("❌ Submission Failed");
+  });
 }
+
 </script>
 
 </body>
