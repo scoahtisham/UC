@@ -1,135 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>UC Camera Survey - PPIC3 Faisalabad</title>
-
-<style>
-body {
-  font-family: Arial;
-  padding: 15px;
-  background: #f5f5f5;
-}
-
-h2 {
-  text-align: center;
-}
-
-button {
-  width: 100%;
-  padding: 15px;
-  margin: 8px 0;
-  font-size: 16px;
-  border-radius: 10px;
-  border: none;
-}
-
-.capture { background: #34a853; color: white; }
-.submit { background: #0b57d0; color: white; }
-
-.card {
-  background: white;
-  padding: 10px;
-  margin: 8px 0;
-  border-radius: 10px;
-}
-
-input {
-  width: 100%;
-  padding: 8px;
-  margin: 4px 0;
-}
-
-iframe {
-  width: 100%;
-  height: 250px;
-  border: none;
-  border-radius: 10px;
-  margin-top: 10px;
-}
-</style>
-</head>
-
-<body>
-
-<h2>📍 UC Camera Survey</h2>
-
-<button class="capture" onclick="capture()">➕ Capture Camera Location</button>
-<button class="submit" onclick="submitData()">✅ Submit All</button>
-
-<div id="map"></div>
-<div id="list"></div>
-
 <script>
-
 let points = [];
-let max = 10;
 
-// Capture GPS
 function capture() {
-
-  if (points.length >= max) {
-    alert("Maximum 10 cameras reached");
+  if (points.length >= 10) {
+    alert("Max 10 points");
     return;
   }
 
   navigator.geolocation.getCurrentPosition(function(pos) {
-
-    let lat = pos.coords.latitude;
-    let lng = pos.coords.longitude;
-
-    points.push({lat, lng});
-
+    points.push({
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude
+    });
     render();
-
-  }, function() {
-    alert("❌ Please allow location access");
   });
 }
 
-// Render UI
 function render() {
-
   let html = "";
-  
-  points.forEach((p, i) => {
-
-    html += `
-      <div class="card">
-        <b>Camera ${i+1}</b>
-
-        <input value="${p.lat}" readonly>
-        <input value="${p.lng}" readonly>
-
-        <button onclick="openMap(${p.lat}, ${p.lng})">🗺️ View Map</button>
-      </div>
-    `;
+  points.forEach((p,i)=>{
+    html += "Point " + (i+1) + ": " + p.lat + ", " + p.lng + "<br>";
   });
-
   document.getElementById("list").innerHTML = html;
-
-  // Show latest map preview
-  let last = points[points.length - 1];
-  if (last) {
-    document.getElementById("map").innerHTML =
-      '<iframe src="https://maps.google.com/maps?q=' 
-      + last.lat + ',' + last.lng + '&z=15&output=embed"></iframe>';
-  }
 }
 
-// Open in Google Maps
-function openMap(lat, lng) {
-  window.open("https://www.google.com/maps?q=" + lat + "," + lng, "_blank");
-}
-
-// Submit to Google Sheet
 function submitData() {
-
-  if (points.length === 0) {
-    alert("No data to submit");
-    return;
-  }
 
   fetch("YOUR_APPS_SCRIPT_URL", {
     method: "POST",
@@ -138,17 +33,7 @@ function submitData() {
       "Content-Type": "application/json"
     }
   })
-  .then(res => {
-    alert("✅ Submitted Successfully");
-    points = [];
-    render();
-  })
-  .catch(err => {
-    alert("❌ Submission Failed");
-  });
+  .then(res => alert("Submitted Successfully"))
+  .catch(err => alert("Error"));
 }
-
 </script>
-
-</body>
-</html>
